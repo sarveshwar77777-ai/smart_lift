@@ -13,6 +13,7 @@ import History    from './pages/History';
 import Analytics  from './pages/Analytics';
 import Prediction from './pages/Prediction';
 import Feedback   from './pages/Feedback';
+import Validation from './pages/Validation';
 import Profile    from './pages/Profile';
 import About      from './pages/About';
 
@@ -35,14 +36,15 @@ function AppRoutes() {
       <Route path="/signup" element={<AuthRoute><Signup /></AuthRoute>} />
 
       <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard"  element={<AppLayout><Dashboard /></AppLayout>} />
-        <Route path="/timer"      element={<AppLayout><WaitTimer /></AppLayout>} />
-        <Route path="/history"    element={<AppLayout><History /></AppLayout>} />
-        <Route path="/analytics"  element={<AppLayout><Analytics /></AppLayout>} />
-        <Route path="/prediction" element={<AppLayout><Prediction /></AppLayout>} />
-        <Route path="/feedback"   element={<AppLayout><Feedback /></AppLayout>} />
-        <Route path="/profile"    element={<AppLayout><Profile /></AppLayout>} />
-        <Route path="/about"      element={<AppLayout><About /></AppLayout>} />
+        <Route path="/dashboard"   element={<AppLayout><Dashboard /></AppLayout>} />
+        <Route path="/timer"       element={<AppLayout><WaitTimer /></AppLayout>} />
+        <Route path="/history"     element={<AppLayout><History /></AppLayout>} />
+        <Route path="/analytics"   element={<AppLayout><Analytics /></AppLayout>} />
+        <Route path="/prediction"  element={<AppLayout><Prediction /></AppLayout>} />
+        <Route path="/feedback"    element={<AppLayout><Feedback /></AppLayout>} />
+        <Route path="/validation"  element={<AppLayout><Validation /></AppLayout>} />
+        <Route path="/profile"     element={<AppLayout><Profile /></AppLayout>} />
+        <Route path="/about"       element={<AppLayout><About /></AppLayout>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

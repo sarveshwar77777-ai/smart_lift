@@ -1,9 +1,9 @@
 -- =============================================
--- SmartLift AI — Supabase Schema
--- Run this entire file in the SQL Editor
+-- SmartLift AI — Supabase Schema & Migrations
+-- Run this entire file in the Supabase SQL Editor
 -- =============================================
 
--- Profiles (extends Supabase auth.users)
+-- 1. Profiles (extends Supabase auth.users)
 CREATE TABLE IF NOT EXISTS profiles (
   id          UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
   full_name   TEXT NOT NULL DEFAULT '',
@@ -13,11 +13,14 @@ CREATE TABLE IF NOT EXISTS profiles (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Waiting records (core data)
+-- 2. Waiting records (core observational data)
 CREATE TABLE IF NOT EXISTS waiting_records (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id          UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   wait_seconds     INTEGER NOT NULL CHECK (wait_seconds >= 0),
+  people_waiting   INTEGER NOT NULL DEFAULT 0,
+  time_period      TEXT NOT NULL DEFAULT 'Morning',
+  day_of_week      TEXT NOT NULL DEFAULT 'Monday',
   lift_number      TEXT NOT NULL DEFAULT 'Lift 1',
   floor            TEXT NOT NULL DEFAULT 'Ground',
   crowd_level      TEXT NOT NULL CHECK (crowd_level IN ('Low','Medium','High')),
@@ -27,17 +30,38 @@ CREATE TABLE IF NOT EXISTS waiting_records (
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Feedback
+-- Migration helpers for existing waiting_records table
+ALTER TABLE waiting_records ADD COLUMN IF NOT EXISTS people_waiting INTEGER DEFAULT 0;
+ALTER TABLE waiting_records ADD COLUMN IF NOT EXISTS time_period TEXT DEFAULT 'Morning';
+ALTER TABLE waiting_records ADD COLUMN IF NOT EXISTS day_of_week TEXT DEFAULT 'Monday';
+
+-- 3. Feedback & Student Validation
 CREATE TABLE IF NOT EXISTS feedback (
-  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id       UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  rating        INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
-  useful        TEXT CHECK (useful IN ('Yes','No','Not sure')),
-  decision_help TEXT CHECK (decision_help IN ('Yes','No','Not sure')),
-  problem       TEXT,
-  suggestion    TEXT,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id                        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id                   UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  rating                    INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  easy_to_use               TEXT,
+  timer_useful              TEXT,
+  prediction_understandable TEXT,
+  would_use_hostel          TEXT,
+  most_useful_feature       TEXT,
+  confusing_aspects         TEXT,
+  improvement_suggestions   TEXT,
+  useful                    TEXT CHECK (useful IN ('Yes','No','Not sure')),
+  decision_help             TEXT CHECK (decision_help IN ('Yes','No','Not sure')),
+  problem                   TEXT,
+  suggestion                TEXT,
+  created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Migration helpers for existing feedback table
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS easy_to_use TEXT;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS timer_useful TEXT;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS prediction_understandable TEXT;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS would_use_hostel TEXT;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS most_useful_feature TEXT;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS confusing_aspects TEXT;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS improvement_suggestions TEXT;
 
 -- =============================================
 -- Row Level Security
@@ -47,17 +71,32 @@ ALTER TABLE waiting_records  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feedback         ENABLE ROW LEVEL SECURITY;
 
 -- Profiles policies
+DROP POLICY IF EXISTS "profiles_select_own" ON profiles;
 CREATE POLICY "profiles_select_own" ON profiles FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "profiles_insert_own" ON profiles;
 CREATE POLICY "profiles_insert_own" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
+DROP POLICY IF EXISTS "profiles_update_own" ON profiles;
 CREATE POLICY "profiles_update_own" ON profiles FOR UPDATE USING (auth.uid() = id);
 
--- Waiting records: users own their records; all can read for analytics
+-- Waiting records: users own their records; all authenticated users can read for collective analytics/prediction
+DROP POLICY IF EXISTS "wr_select_all" ON waiting_records;
 CREATE POLICY "wr_select_all"  ON waiting_records FOR SELECT USING (TRUE);
+
+DROP POLICY IF EXISTS "wr_insert_own" ON waiting_records;
 CREATE POLICY "wr_insert_own"  ON waiting_records FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "wr_delete_own" ON waiting_records;
 CREATE POLICY "wr_delete_own"  ON waiting_records FOR DELETE USING (auth.uid() = user_id);
 
--- Feedback: users own their records
-CREATE POLICY "fb_select_own"  ON feedback FOR SELECT USING (auth.uid() = user_id);
+-- Feedback: users insert own; all authenticated can read for validation dashboard
+DROP POLICY IF EXISTS "fb_select_all" ON feedback;
+CREATE POLICY "fb_select_all"  ON feedback FOR SELECT USING (TRUE);
+
+DROP POLICY IF EXISTS "fb_select_own" ON feedback;
+
+DROP POLICY IF EXISTS "fb_insert_own" ON feedback;
 CREATE POLICY "fb_insert_own"  ON feedback FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- =============================================
@@ -66,6 +105,7 @@ CREATE POLICY "fb_insert_own"  ON feedback FOR INSERT WITH CHECK (auth.uid() = u
 CREATE INDEX IF NOT EXISTS idx_wr_user      ON waiting_records (user_id);
 CREATE INDEX IF NOT EXISTS idx_wr_date      ON waiting_records (observation_date);
 CREATE INDEX IF NOT EXISTS idx_wr_crowd     ON waiting_records (crowd_level);
+CREATE INDEX IF NOT EXISTS idx_wr_period    ON waiting_records (time_period);
 CREATE INDEX IF NOT EXISTS idx_wr_lift      ON waiting_records (lift_number);
 CREATE INDEX IF NOT EXISTS idx_fb_user      ON feedback (user_id);
 

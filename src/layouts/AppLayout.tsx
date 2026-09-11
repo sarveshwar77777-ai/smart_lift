@@ -3,19 +3,20 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import {
   LayoutDashboard, Timer, History, BarChart3, Sparkles,
-  MessageSquare, User, Info, LogOut, Menu, X,
+  MessageSquare, ShieldCheck, User, Info, LogOut, Menu, X,
   ChevronRight, Activity, Bell
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { to: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/timer',      icon: Timer,            label: 'Wait Timer' },
-  { to: '/history',    icon: History,          label: 'History' },
+  { to: '/timer',      icon: Timer,            label: 'Waiting Timer' },
+  { to: '/history',    icon: History,          label: 'Observations' },
   { to: '/analytics',  icon: BarChart3,        label: 'Analytics' },
   { to: '/prediction', icon: Sparkles,         label: 'Prediction' },
   { to: '/feedback',   icon: MessageSquare,    label: 'Feedback' },
-  { to: '/profile',    icon: User,             label: 'Profile' },
+  { to: '/validation', icon: ShieldCheck,      label: 'Validation' },
   { to: '/about',      icon: Info,             label: 'About' },
+  { to: '/profile',    icon: User,             label: 'Profile' },
 ];
 
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
@@ -31,17 +32,30 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-4 py-5 border-b border-gray-100">
-        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
           <Activity className="w-5 h-5 text-white" />
         </div>
         <div>
           <div className="text-sm font-bold text-gray-900 leading-none">SmartLift AI</div>
-          <div className="text-xs text-gray-400 mt-0.5">Hostel Elevator Assistant</div>
+          <div className="text-[11px] text-blue-600 font-medium mt-0.5">Know the wait. Make the choice.</div>
+        </div>
+      </div>
+
+      {/* Project Status indicator */}
+      <div className="px-3 pt-3 pb-1">
+        <div className="px-3 py-2 bg-blue-50/70 border border-blue-100 rounded-lg text-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-blue-800">
+            <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+            Field Validation Active
+          </div>
+          <p className="text-[11px] text-blue-600/90 mt-0.5 leading-tight">
+            Academic prototype collecting real observations.
+          </p>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
         {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
